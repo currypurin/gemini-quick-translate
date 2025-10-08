@@ -24,7 +24,8 @@ function setupOptionsPage() {
         showStatus(statusEl, `保存に失敗しました: ${chrome.runtime.lastError.message}`, true);
         return;
       }
-      showStatus(statusEl, 'APIキーを保存しました。');
+      keyInput.value = '';
+      showStatus(statusEl, 'APIキーを保存しました。必要に応じて新しいキーを再入力してください。');
     });
   });
 
@@ -34,8 +35,8 @@ function setupOptionsPage() {
       return;
     }
     const stored = items[API_KEY_STORAGE_KEY];
-    if (typeof stored === 'string') {
-      keyInput.value = stored;
+    if (typeof stored === 'string' && stored.trim().length > 0) {
+      showStatus(statusEl, 'APIキーは保存済みです。更新する場合は新しいキーを入力して保存してください。');
     }
   });
 }

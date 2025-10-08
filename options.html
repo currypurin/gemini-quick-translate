@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>Gemini Flashlight Translator 設定</title>
+    <style>
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        margin: 24px;
+        color: #0f172a;
+      }
+      h1 {
+        font-size: 20px;
+        margin-bottom: 8px;
+      }
+      label {
+        display: block;
+        font-size: 13px;
+        margin-top: 16px;
+      }
+      input[type="text"] {
+        width: 360px;
+        max-width: 100%;
+        padding: 8px;
+        font-size: 13px;
+        border-radius: 6px;
+        border: 1px solid #cbd5f5;
+      }
+      button {
+        margin-top: 16px;
+        padding: 8px 16px;
+        font-size: 13px;
+        border: none;
+        border-radius: 6px;
+        background: #2563eb;
+        color: #fff;
+        cursor: pointer;
+      }
+      .status {
+        margin-top: 12px;
+        font-size: 12px;
+        color: #2563eb;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Gemini Flashlight Translator 設定</h1>
+    <p>APIキーを保存すると、英語テキスト選択時にGemini 2.5 Flashlight APIを呼び出せるようになります。</p>
+    <label for="gemini-api-key">Gemini APIキー</label>
+    <input id="gemini-api-key" type="text" placeholder="AIza..." autocomplete="off" />
+    <button id="save-button" type="button">保存</button>
+    <div class="status" id="status-message" role="status"></div>
+
+    <script type="module" src="dist/options/index.js"></script>
+  </body>
+</html>

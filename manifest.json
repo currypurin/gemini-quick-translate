@@ -1,0 +1,31 @@
+{
+  "manifest_version": 3,
+  "name": "Gemini Flashlight Translator",
+  "description": "選択した英語テキストをGemini 2.5 Flashlightでストリーミング翻訳するChrome拡張",
+  "version": "0.1.0",
+  "permissions": [
+    "storage",
+    "activeTab",
+    "scripting",
+    "contextMenus"
+  ],
+  "host_permissions": [
+    "https://generativelanguage.googleapis.com/*"
+  ],
+  "background": {
+    "service_worker": "dist/background/index.js",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["dist/content/index.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_title": "Gemini Flashlight Translator",
+    "default_popup": "popup.html"
+  },
+  "options_page": "options.html"
+}

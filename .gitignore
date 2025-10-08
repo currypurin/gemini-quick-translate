@@ -1,0 +1,9 @@
+node_modules/
+request.json
+.env
+.env.*
+*.log
+npm-debug.log*
+.DS_Store
+.vscode/
+coverage/

@@ -45,9 +45,7 @@ async function handleTranslateRequest(message, sender) {
             text,
             tone
         })) {
-            console.log('Received chunk:', chunk);
             aggregated += chunk;
-            console.log('Aggregated so far:', aggregated);
             if (tabId !== null && chunk) {
                 notifyTab(tabId, {
                     type: 'translation-progress',

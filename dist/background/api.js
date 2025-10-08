@@ -2,7 +2,6 @@ const MODEL_ID = 'gemini-flash-lite-latest';
 const ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_ID}:streamGenerateContent`;
 const decoder = new TextDecoder('utf-8');
 export async function* streamGeminiTranslation({ apiKey, text, tone }) {
-    var _a;
     const response = await fetch(`${ENDPOINT}?key=${encodeURIComponent(apiKey)}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -18,10 +17,6 @@ export async function* streamGeminiTranslation({ apiKey, text, tone }) {
         throw new Error('Gemini APIからのストリームが利用できませんでした。');
     }
     const reader = response.body.getReader();
-    const contentType = (_a = response.headers.get('Content-Type')) !== null && _a !== void 0 ? _a : '';
-    console.log('Content-Type:', contentType);
-    const isEventStream = contentType.toLowerCase().includes('text/event-stream');
-    console.log('Is event stream:', isEventStream);
     let buffer = '';
     let fullText = '';
     while (true) {
@@ -32,7 +27,6 @@ export async function* streamGeminiTranslation({ apiKey, text, tone }) {
         }
         buffer += decoder.decode(value, { stream: true });
         buffer = normalizeLineEndings(buffer);
-        console.log('Full buffer so far:', buffer);
         // ストリーミング中に完全なJSONオブジェクトを検出して処理
         let jsonEndIndex = findCompleteJsonObject(buffer);
         while (jsonEndIndex !== -1) {
@@ -44,7 +38,6 @@ export async function* streamGeminiTranslation({ apiKey, text, tone }) {
                 const text = parseAggregateFromJson(cleanJson);
                 if (text) {
                     fullText += text;
-                    console.log('Yielding text chunk:', text);
                     yield text;
                 }
             }
@@ -53,19 +46,16 @@ export async function* streamGeminiTranslation({ apiKey, text, tone }) {
     }
     // 残りのバッファを処理
     const remaining = buffer.trim();
-    console.log('Final remaining buffer:', remaining);
     if (remaining && remaining !== ']' && remaining !== '[DONE]') {
         const cleanJson = remaining.replace(/^[\[\,]\s*/, '').replace(/\]$/, '');
         if (cleanJson) {
             const text = parseAggregateFromJson(cleanJson);
             if (text) {
                 fullText += text;
-                console.log('Yielding final text:', text);
                 yield text;
             }
         }
     }
-    console.log('Total text yielded:', fullText);
 }
 function buildRequestPayload(text, tone) {
     const toneInstruction = tone === 'casual'
@@ -169,9 +159,7 @@ function extractAggregateFromEvent(rawEvent) {
 function parseAggregateFromJson(raw) {
     try {
         const payload = JSON.parse(raw);
-        console.log('Gemini API payload:', payload);
         const text = extractTextFromPayload(payload);
-        console.log('Extracted text:', text);
         return text || null;
     }
     catch (error) {
@@ -182,7 +170,6 @@ function parseAggregateFromJson(raw) {
 function parseAggregateFromJsonArray(raw) {
     try {
         const payload = JSON.parse(raw);
-        console.log('Parsing JSON array:', payload);
         // 配列の場合、各要素からテキストを抽出して結合
         if (Array.isArray(payload)) {
             let fullText = '';
@@ -192,12 +179,10 @@ function parseAggregateFromJsonArray(raw) {
                     fullText += text;
                 }
             }
-            console.log('Extracted full text from array:', fullText);
             return fullText || null;
         }
         // 配列でない場合は通常の解析
         const text = extractTextFromPayload(payload);
-        console.log('Extracted text from object:', text);
         return text || null;
     }
     catch (error) {

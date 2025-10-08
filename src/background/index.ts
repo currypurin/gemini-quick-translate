@@ -38,7 +38,7 @@ async function handleTranslateRequest(
   message: TranslateTextRequest,
   sender: chrome.runtime.MessageSender
 ): Promise<TranslateTextResponse> {
-  const { text, requestId, tone: requestedTone, sourceUrl } = message.payload;
+  const { text, requestId, tone: requestedTone } = message.payload;
   const apiKey = await getApiKey();
   if (!apiKey) {
     return {
@@ -57,8 +57,7 @@ async function handleTranslateRequest(
     for await (const chunk of streamGeminiTranslation({
       apiKey,
       text,
-      tone,
-      sourceUrl
+      tone
     })) {
       console.log('Received chunk:', chunk);
       aggregated += chunk;

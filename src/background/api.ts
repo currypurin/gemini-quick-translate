@@ -7,16 +7,15 @@ interface StreamTranslationParams {
   apiKey: string;
   text: string;
   tone: TranslateTone;
-  sourceUrl?: string;
 }
 
 const decoder = new TextDecoder('utf-8');
 
-export async function* streamGeminiTranslation({ apiKey, text, tone, sourceUrl }: StreamTranslationParams): AsyncGenerator<string> {
+export async function* streamGeminiTranslation({ apiKey, text, tone }: StreamTranslationParams): AsyncGenerator<string> {
   const response = await fetch(`${ENDPOINT}?key=${encodeURIComponent(apiKey)}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(buildRequestPayload(text, tone, sourceUrl)),
+    body: JSON.stringify(buildRequestPayload(text, tone)),
   });
 
   if (!response.ok) {
@@ -90,11 +89,10 @@ export async function* streamGeminiTranslation({ apiKey, text, tone, sourceUrl }
   console.log('Total text yielded:', fullText);
 }
 
-function buildRequestPayload(text: string, tone: TranslateTone, sourceUrl?: string) {
+function buildRequestPayload(text: string, tone: TranslateTone) {
   const toneInstruction = tone === 'casual'
     ? 'Use natural, casual Japanese suitable for friendly conversations.'
     : 'Use concise, polite Japanese suitable for professional documents.';
-  const contextualHint = sourceUrl ? `Source URL: ${sourceUrl}` : '';
 
   return {
     contents: [
@@ -108,7 +106,6 @@ function buildRequestPayload(text: string, tone: TranslateTone, sourceUrl?: stri
               `- Tone: ${toneInstruction}`,
               '- Preserve technical terms and proper nouns when appropriate.',
               '- Output only the translation without additional commentary.',
-              contextualHint,
               '',
               '---',
               text,

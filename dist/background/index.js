@@ -26,7 +26,7 @@ chrome.runtime.onInstalled.addListener(() => {
 });
 async function handleTranslateRequest(message, sender) {
     var _a;
-    const { text, requestId, tone: requestedTone, sourceUrl } = message.payload;
+    const { text, requestId, tone: requestedTone } = message.payload;
     const apiKey = await getApiKey();
     if (!apiKey) {
         return {
@@ -43,8 +43,7 @@ async function handleTranslateRequest(message, sender) {
         for await (const chunk of streamGeminiTranslation({
             apiKey,
             text,
-            tone,
-            sourceUrl
+            tone
         })) {
             console.log('Received chunk:', chunk);
             aggregated += chunk;

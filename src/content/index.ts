@@ -8,7 +8,6 @@ interface TranslateTextRequest {
     text: string;
     requestId: string;
     tone?: TranslateTone;
-    sourceUrl?: string;
   };
 }
 
@@ -219,8 +218,7 @@ function triggerTranslation() {
     payload: {
       text: state.selectedText,
       requestId,
-      tone: state.tone,
-      sourceUrl: window.location.href
+      tone: state.tone
     }
   })
     .then((response) => {

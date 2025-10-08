@@ -1,12 +1,12 @@
 const MODEL_ID = 'gemini-flash-lite-latest';
 const ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_ID}:streamGenerateContent`;
 const decoder = new TextDecoder('utf-8');
-export async function* streamGeminiTranslation({ apiKey, text, tone, sourceUrl }) {
+export async function* streamGeminiTranslation({ apiKey, text, tone }) {
     var _a;
     const response = await fetch(`${ENDPOINT}?key=${encodeURIComponent(apiKey)}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(buildRequestPayload(text, tone, sourceUrl)),
+        body: JSON.stringify(buildRequestPayload(text, tone)),
     });
     if (!response.ok) {
         const errorBody = await safeReadText(response).catch(() => '');
@@ -67,11 +67,10 @@ export async function* streamGeminiTranslation({ apiKey, text, tone, sourceUrl }
     }
     console.log('Total text yielded:', fullText);
 }
-function buildRequestPayload(text, tone, sourceUrl) {
+function buildRequestPayload(text, tone) {
     const toneInstruction = tone === 'casual'
         ? 'Use natural, casual Japanese suitable for friendly conversations.'
         : 'Use concise, polite Japanese suitable for professional documents.';
-    const contextualHint = sourceUrl ? `Source URL: ${sourceUrl}` : '';
     return {
         contents: [
             {
@@ -84,7 +83,6 @@ function buildRequestPayload(text, tone, sourceUrl) {
                             `- Tone: ${toneInstruction}`,
                             '- Preserve technical terms and proper nouns when appropriate.',
                             '- Output only the translation without additional commentary.',
-                            contextualHint,
                             '',
                             '---',
                             text,

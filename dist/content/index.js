@@ -2,23 +2,37 @@
 const DEFAULT_TONE = 'polite';
 const BUBBLE_ID = 'gft-inline-bubble';
 const MAX_SELECTION_LENGTH = 800;
+const MIN_FONT_SIZE = 11;
+const MAX_FONT_SIZE = 80;
+const DEFAULT_FONT_SIZE = 13;
+const FONT_SIZE_STORAGE_KEY = 'bubbleFontSize';
+const MIN_WIDTH = 240;
+const MAX_WIDTH = 1200;
+const DEFAULT_WIDTH = 320;
+const WIDTH_STORAGE_KEY = 'bubbleWidth';
 const state = {
     requestId: null,
     selectedText: '',
     tone: DEFAULT_TONE,
-    isTranslating: false
+    isTranslating: false,
+    fontSize: DEFAULT_FONT_SIZE,
+    bubbleWidth: DEFAULT_WIDTH
 };
 const elements = {
     bubble: null,
     preview: null,
     result: null,
     status: null,
-    action: null
+    action: null,
+    copyButton: null
 };
 init();
 function init() {
     injectStyles();
     preloadTonePreference();
+    preloadFontSize();
+    preloadBubbleWidth();
+    listenToStorageChanges();
     document.addEventListener('mouseup', handleSelectionChange);
     document.addEventListener('keyup', (event) => {
         if (event.key === 'Escape') {
@@ -60,7 +74,58 @@ function preloadTonePreference() {
         }
     });
 }
-function handleSelectionChange() {
+function preloadFontSize() {
+    chrome.storage.local.get([FONT_SIZE_STORAGE_KEY], (items) => {
+        if (chrome.runtime.lastError) {
+            console.debug('文字サイズ設定の取得に失敗しました', chrome.runtime.lastError.message);
+            return;
+        }
+        const fontSize = items[FONT_SIZE_STORAGE_KEY];
+        if (typeof fontSize === 'number' && fontSize >= MIN_FONT_SIZE && fontSize <= MAX_FONT_SIZE) {
+            state.fontSize = fontSize;
+            applyFontSizeToBubble();
+        }
+    });
+}
+function preloadBubbleWidth() {
+    chrome.storage.local.get([WIDTH_STORAGE_KEY], (items) => {
+        if (chrome.runtime.lastError) {
+            console.debug('横幅設定の取得に失敗しました', chrome.runtime.lastError.message);
+            return;
+        }
+        const bubbleWidth = items[WIDTH_STORAGE_KEY];
+        if (typeof bubbleWidth === 'number' && bubbleWidth >= MIN_WIDTH && bubbleWidth <= MAX_WIDTH) {
+            state.bubbleWidth = bubbleWidth;
+            applyBubbleWidth();
+        }
+    });
+}
+function listenToStorageChanges() {
+    chrome.storage.onChanged.addListener((changes, areaName) => {
+        if (areaName !== 'local') {
+            return;
+        }
+        if (changes[FONT_SIZE_STORAGE_KEY]) {
+            const newValue = changes[FONT_SIZE_STORAGE_KEY].newValue;
+            if (typeof newValue === 'number' && newValue >= MIN_FONT_SIZE && newValue <= MAX_FONT_SIZE) {
+                state.fontSize = newValue;
+                applyFontSizeToBubble();
+            }
+        }
+        if (changes[WIDTH_STORAGE_KEY]) {
+            const newValue = changes[WIDTH_STORAGE_KEY].newValue;
+            if (typeof newValue === 'number' && newValue >= MIN_WIDTH && newValue <= MAX_WIDTH) {
+                state.bubbleWidth = newValue;
+                applyBubbleWidth();
+            }
+        }
+    });
+}
+function handleSelectionChange(event) {
+    // バブル内のクリックの場合は無視
+    if (event.target && elements.bubble && elements.bubble.contains(event.target)) {
+        return;
+    }
     const selection = window.getSelection();
     if (!selection || selection.rangeCount === 0 || selection.isCollapsed) {
         hideBubble();
@@ -78,10 +143,9 @@ function handleSelectionChange() {
 }
 function showBubble(rect, text) {
     ensureBubble();
-    if (!elements.bubble || !elements.preview) {
+    if (!elements.bubble) {
         return;
     }
-    elements.preview.textContent = truncateText(text, 160);
     elements.bubble.style.display = 'block';
     const top = window.scrollY + rect.bottom + 12;
     const left = window.scrollX + rect.left;
@@ -92,6 +156,7 @@ function showBubble(rect, text) {
 function hideBubble() {
     if (elements.bubble) {
         elements.bubble.style.display = 'none';
+        elements.bubble.classList.remove('gft-expanded');
     }
     state.requestId = null;
     state.selectedText = '';
@@ -106,40 +171,47 @@ function ensureBubble() {
     bubble.setAttribute('role', 'dialog');
     bubble.setAttribute('aria-live', 'polite');
     bubble.innerHTML = `
-    <div class="gft-header">
-      <span class="gft-title">Gemini 翻訳</span>
-      <button class="gft-close" type="button" aria-label="閉じる">×</button>
+    <div class="gft-button-group">
+      <button class="gft-action" type="button">翻訳</button>
+      <button class="gft-copy" type="button" style="display: none;">コピー</button>
     </div>
-    <div class="gft-preview" aria-label="選択テキストプレビュー"></div>
-    <button class="gft-action" type="button">翻訳</button>
     <div class="gft-status" role="status"></div>
     <div class="gft-result"></div>
   `;
     document.body.appendChild(bubble);
-    const closeButton = bubble.querySelector('.gft-close');
     const actionButton = bubble.querySelector('.gft-action');
-    const preview = bubble.querySelector('.gft-preview');
+    const copyButton = bubble.querySelector('.gft-copy');
     const status = bubble.querySelector('.gft-status');
     const result = bubble.querySelector('.gft-result');
-    if (!closeButton || !actionButton || !preview || !status || !result) {
+    if (!actionButton || !copyButton || !status || !result) {
         return;
     }
-    closeButton.addEventListener('click', hideBubble);
     actionButton.addEventListener('click', () => {
         if (state.isTranslating) {
             return;
         }
         triggerTranslation();
     });
+    copyButton.addEventListener('click', () => {
+        copyTranslationToClipboard();
+    });
     elements.bubble = bubble;
-    elements.preview = preview;
+    elements.preview = null;
     elements.status = status;
     elements.result = result;
     elements.action = actionButton;
+    elements.copyButton = copyButton;
+    // 保存済みの文字サイズと横幅を適用
+    applyFontSizeToBubble();
+    applyBubbleWidth();
 }
 function triggerTranslation() {
     if (!state.selectedText) {
         return;
+    }
+    // バブルを拡張モードに切り替え
+    if (elements.bubble) {
+        elements.bubble.classList.add('gft-expanded');
     }
     const requestId = createRequestId();
     state.requestId = requestId;
@@ -214,25 +286,59 @@ function renderResult(text) {
         console.log('Set textContent to:', elements.result.textContent);
         if (text) {
             elements.result.style.display = 'block';
+            // 翻訳結果が表示されたらコピーボタンを表示
+            if (elements.copyButton) {
+                elements.copyButton.style.display = 'inline-block';
+            }
+        }
+        else {
+            // テキストが空の場合はコピーボタンを非表示
+            if (elements.copyButton) {
+                elements.copyButton.style.display = 'none';
+            }
         }
     }
 }
 function renderError(message) {
+    if (elements.bubble) {
+        elements.bubble.classList.add('gft-expanded');
+    }
     renderStatus('エラーが発生しました');
     if (elements.result) {
         elements.result.textContent = message;
         elements.result.classList.add('gft-error');
+        elements.result.style.display = 'block';
     }
 }
 function resetResult() {
     state.isTranslating = false;
+    if (elements.bubble) {
+        elements.bubble.classList.remove('gft-expanded');
+    }
     if (elements.result) {
         elements.result.textContent = '';
         elements.result.classList.remove('gft-error');
+        elements.result.style.display = 'none';
     }
-    renderStatus('翻訳を開始するにはボタンをクリック');
+    if (elements.copyButton) {
+        elements.copyButton.style.display = 'none';
+    }
+    renderStatus('');
     if (elements.action) {
         elements.action.disabled = false;
+    }
+}
+function applyFontSizeToBubble() {
+    if (elements.result) {
+        elements.result.style.fontSize = `${state.fontSize}px`;
+    }
+    if (elements.preview) {
+        elements.preview.style.fontSize = `${state.fontSize}px`;
+    }
+}
+function applyBubbleWidth() {
+    if (elements.bubble) {
+        elements.bubble.style.maxWidth = `${state.bubbleWidth}px`;
     }
 }
 function injectStyles() {
@@ -245,71 +351,79 @@ function injectStyles() {
     #${BUBBLE_ID} {
       position: absolute;
       z-index: 2147483647;
-      min-width: 240px;
-      max-width: 320px;
+      min-width: auto;
       background: rgba(15, 23, 42, 0.96);
       color: #f8fafc;
-      border-radius: 12px;
-      box-shadow: 0 12px 32px rgba(15, 23, 42, 0.32);
-      padding: 16px;
+      border-radius: 8px;
+      box-shadow: 0 8px 24px rgba(15, 23, 42, 0.32);
+      padding: 6px;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       font-size: 13px;
       line-height: 1.6;
       display: none;
       backdrop-filter: blur(12px);
     }
-    #${BUBBLE_ID} .gft-header {
+    #${BUBBLE_ID}.gft-expanded {
+      min-width: 240px;
+      padding: 16px;
+    }
+    #${BUBBLE_ID} .gft-button-group {
       display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 8px;
       gap: 8px;
-    }
-    #${BUBBLE_ID} .gft-title {
-      font-weight: 600;
-      font-size: 13px;
-    }
-    #${BUBBLE_ID} .gft-close {
-      background: transparent;
-      border: none;
-      color: inherit;
-      font-size: 16px;
-      cursor: pointer;
-      padding: 0 4px;
-    }
-    #${BUBBLE_ID} .gft-preview {
-      background: rgba(255, 255, 255, 0.05);
-      padding: 8px;
-      border-radius: 8px;
-      margin-bottom: 8px;
-      max-height: 80px;
-      overflow: hidden;
+      align-items: center;
     }
     #${BUBBLE_ID} .gft-action {
-      width: 100%;
-      padding: 8px 12px;
+      padding: 6px 16px;
       border: none;
-      border-radius: 8px;
+      border-radius: 6px;
       background: linear-gradient(135deg, #2563eb, #a855f7);
       color: #fff;
       font-weight: 600;
+      font-size: 13px;
       cursor: pointer;
-      margin-bottom: 8px;
+      white-space: nowrap;
+    }
+    #${BUBBLE_ID} .gft-action:hover {
+      opacity: 0.9;
     }
     #${BUBBLE_ID} .gft-action:disabled {
+      opacity: 0.5;
+      cursor: default;
+    }
+    #${BUBBLE_ID} .gft-copy {
+      padding: 6px 16px;
+      border: none;
+      border-radius: 6px;
+      background: rgba(248, 250, 252, 0.1);
+      color: #f8fafc;
+      font-weight: 600;
+      font-size: 13px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.2s;
+    }
+    #${BUBBLE_ID} .gft-copy:hover {
+      background: rgba(248, 250, 252, 0.2);
+    }
+    #${BUBBLE_ID} .gft-copy:disabled {
       opacity: 0.5;
       cursor: default;
     }
     #${BUBBLE_ID} .gft-status {
       font-size: 11px;
       color: rgba(248, 250, 252, 0.75);
+      margin-top: 8px;
       margin-bottom: 6px;
+      display: none;
+    }
+    #${BUBBLE_ID}.gft-expanded .gft-status {
+      display: block;
     }
     #${BUBBLE_ID} .gft-result {
-      font-size: 13px;
       white-space: pre-wrap;
-      min-height: 20px;
       word-break: break-word;
+      margin-top: 8px;
+      display: none;
     }
     #${BUBBLE_ID} .gft-result.gft-error {
       color: #fca5a5;
@@ -331,4 +445,41 @@ function createRequestId() {
         return crypto.randomUUID();
     }
     return `req-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`;
+}
+function copyTranslationToClipboard() {
+    if (!elements.result) {
+        return;
+    }
+    const translationText = elements.result.textContent || '';
+    if (!translationText) {
+        return;
+    }
+    navigator.clipboard.writeText(translationText)
+        .then(() => {
+        // コピー成功時のフィードバック
+        if (elements.copyButton) {
+            const originalText = elements.copyButton.textContent;
+            elements.copyButton.textContent = 'コピーしました';
+            elements.copyButton.disabled = true;
+            setTimeout(() => {
+                if (elements.copyButton) {
+                    elements.copyButton.textContent = originalText;
+                    elements.copyButton.disabled = false;
+                }
+            }, 1500);
+        }
+    })
+        .catch((error) => {
+        console.error('クリップボードへのコピーに失敗しました:', error);
+        // エラー時のフィードバック
+        if (elements.copyButton) {
+            const originalText = elements.copyButton.textContent;
+            elements.copyButton.textContent = 'コピー失敗';
+            setTimeout(() => {
+                if (elements.copyButton) {
+                    elements.copyButton.textContent = originalText;
+                }
+            }, 1500);
+        }
+    });
 }

@@ -7,7 +7,8 @@
     "storage",
     "activeTab",
     "scripting",
-    "contextMenus"
+    "contextMenus",
+    "clipboardWrite"
   ],
   "host_permissions": [
     "https://generativelanguage.googleapis.com/*"
@@ -23,7 +24,8 @@
         "http://*/*"
       ],
       "js": ["dist/content/index.js"],
-      "run_at": "document_idle"
+      "run_at": "document_idle",
+      "all_frames": true
     }
   ],
   "action": {

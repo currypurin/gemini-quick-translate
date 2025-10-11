@@ -138,10 +138,9 @@ function handleSelectionChange() {
 }
 function showBubble(rect, text) {
     ensureBubble();
-    if (!elements.bubble || !elements.preview) {
+    if (!elements.bubble) {
         return;
     }
-    elements.preview.textContent = truncateText(text, 160);
     elements.bubble.style.display = 'block';
     const top = window.scrollY + rect.bottom + 12;
     const left = window.scrollX + rect.left;
@@ -152,6 +151,7 @@ function showBubble(rect, text) {
 function hideBubble() {
     if (elements.bubble) {
         elements.bubble.style.display = 'none';
+        elements.bubble.classList.remove('gft-expanded');
     }
     state.requestId = null;
     state.selectedText = '';
@@ -166,25 +166,17 @@ function ensureBubble() {
     bubble.setAttribute('role', 'dialog');
     bubble.setAttribute('aria-live', 'polite');
     bubble.innerHTML = `
-    <div class="gft-header">
-      <span class="gft-title">Gemini 翻訳</span>
-      <button class="gft-close" type="button" aria-label="閉じる">×</button>
-    </div>
-    <div class="gft-preview" aria-label="選択テキストプレビュー"></div>
     <button class="gft-action" type="button">翻訳</button>
     <div class="gft-status" role="status"></div>
     <div class="gft-result"></div>
   `;
     document.body.appendChild(bubble);
-    const closeButton = bubble.querySelector('.gft-close');
     const actionButton = bubble.querySelector('.gft-action');
-    const preview = bubble.querySelector('.gft-preview');
     const status = bubble.querySelector('.gft-status');
     const result = bubble.querySelector('.gft-result');
-    if (!closeButton || !actionButton || !preview || !status || !result) {
+    if (!actionButton || !status || !result) {
         return;
     }
-    closeButton.addEventListener('click', hideBubble);
     actionButton.addEventListener('click', () => {
         if (state.isTranslating) {
             return;
@@ -192,7 +184,7 @@ function ensureBubble() {
         triggerTranslation();
     });
     elements.bubble = bubble;
-    elements.preview = preview;
+    elements.preview = null;
     elements.status = status;
     elements.result = result;
     elements.action = actionButton;
@@ -203,6 +195,10 @@ function ensureBubble() {
 function triggerTranslation() {
     if (!state.selectedText) {
         return;
+    }
+    // バブルを拡張モードに切り替え
+    if (elements.bubble) {
+        elements.bubble.classList.add('gft-expanded');
     }
     const requestId = createRequestId();
     state.requestId = requestId;
@@ -281,19 +277,27 @@ function renderResult(text) {
     }
 }
 function renderError(message) {
+    if (elements.bubble) {
+        elements.bubble.classList.add('gft-expanded');
+    }
     renderStatus('エラーが発生しました');
     if (elements.result) {
         elements.result.textContent = message;
         elements.result.classList.add('gft-error');
+        elements.result.style.display = 'block';
     }
 }
 function resetResult() {
     state.isTranslating = false;
+    if (elements.bubble) {
+        elements.bubble.classList.remove('gft-expanded');
+    }
     if (elements.result) {
         elements.result.textContent = '';
         elements.result.classList.remove('gft-error');
+        elements.result.style.display = 'none';
     }
-    renderStatus('翻訳を開始するにはボタンをクリック');
+    renderStatus('');
     if (elements.action) {
         elements.action.disabled = false;
     }
@@ -321,55 +325,35 @@ function injectStyles() {
     #${BUBBLE_ID} {
       position: absolute;
       z-index: 2147483647;
-      min-width: 240px;
+      min-width: auto;
       background: rgba(15, 23, 42, 0.96);
       color: #f8fafc;
-      border-radius: 12px;
-      box-shadow: 0 12px 32px rgba(15, 23, 42, 0.32);
-      padding: 16px;
+      border-radius: 8px;
+      box-shadow: 0 8px 24px rgba(15, 23, 42, 0.32);
+      padding: 6px;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       font-size: 13px;
       line-height: 1.6;
       display: none;
       backdrop-filter: blur(12px);
     }
-    #${BUBBLE_ID} .gft-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 8px;
-      gap: 8px;
-    }
-    #${BUBBLE_ID} .gft-title {
-      font-weight: 600;
-      font-size: 13px;
-    }
-    #${BUBBLE_ID} .gft-close {
-      background: transparent;
-      border: none;
-      color: inherit;
-      font-size: 16px;
-      cursor: pointer;
-      padding: 0 4px;
-    }
-    #${BUBBLE_ID} .gft-preview {
-      background: rgba(255, 255, 255, 0.05);
-      padding: 8px;
-      border-radius: 8px;
-      margin-bottom: 8px;
-      max-height: 80px;
-      overflow: hidden;
+    #${BUBBLE_ID}.gft-expanded {
+      min-width: 240px;
+      padding: 16px;
     }
     #${BUBBLE_ID} .gft-action {
-      width: 100%;
-      padding: 8px 12px;
+      padding: 6px 16px;
       border: none;
-      border-radius: 8px;
+      border-radius: 6px;
       background: linear-gradient(135deg, #2563eb, #a855f7);
       color: #fff;
       font-weight: 600;
+      font-size: 13px;
       cursor: pointer;
-      margin-bottom: 8px;
+      white-space: nowrap;
+    }
+    #${BUBBLE_ID} .gft-action:hover {
+      opacity: 0.9;
     }
     #${BUBBLE_ID} .gft-action:disabled {
       opacity: 0.5;
@@ -378,12 +362,18 @@ function injectStyles() {
     #${BUBBLE_ID} .gft-status {
       font-size: 11px;
       color: rgba(248, 250, 252, 0.75);
+      margin-top: 8px;
       margin-bottom: 6px;
+      display: none;
+    }
+    #${BUBBLE_ID}.gft-expanded .gft-status {
+      display: block;
     }
     #${BUBBLE_ID} .gft-result {
       white-space: pre-wrap;
-      min-height: 20px;
       word-break: break-word;
+      margin-top: 8px;
+      display: none;
     }
     #${BUBBLE_ID} .gft-result.gft-error {
       color: #fca5a5;

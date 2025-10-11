@@ -23,7 +23,8 @@ const elements = {
     preview: null,
     result: null,
     status: null,
-    action: null
+    action: null,
+    copyButton: null
 };
 init();
 function init() {
@@ -120,7 +121,11 @@ function listenToStorageChanges() {
         }
     });
 }
-function handleSelectionChange() {
+function handleSelectionChange(event) {
+    // バブル内のクリックの場合は無視
+    if (event.target && elements.bubble && elements.bubble.contains(event.target)) {
+        return;
+    }
     const selection = window.getSelection();
     if (!selection || selection.rangeCount === 0 || selection.isCollapsed) {
         hideBubble();
@@ -166,15 +171,19 @@ function ensureBubble() {
     bubble.setAttribute('role', 'dialog');
     bubble.setAttribute('aria-live', 'polite');
     bubble.innerHTML = `
-    <button class="gft-action" type="button">翻訳</button>
+    <div class="gft-button-group">
+      <button class="gft-action" type="button">翻訳</button>
+      <button class="gft-copy" type="button" style="display: none;">コピー</button>
+    </div>
     <div class="gft-status" role="status"></div>
     <div class="gft-result"></div>
   `;
     document.body.appendChild(bubble);
     const actionButton = bubble.querySelector('.gft-action');
+    const copyButton = bubble.querySelector('.gft-copy');
     const status = bubble.querySelector('.gft-status');
     const result = bubble.querySelector('.gft-result');
-    if (!actionButton || !status || !result) {
+    if (!actionButton || !copyButton || !status || !result) {
         return;
     }
     actionButton.addEventListener('click', () => {
@@ -183,11 +192,15 @@ function ensureBubble() {
         }
         triggerTranslation();
     });
+    copyButton.addEventListener('click', () => {
+        copyTranslationToClipboard();
+    });
     elements.bubble = bubble;
     elements.preview = null;
     elements.status = status;
     elements.result = result;
     elements.action = actionButton;
+    elements.copyButton = copyButton;
     // 保存済みの文字サイズと横幅を適用
     applyFontSizeToBubble();
     applyBubbleWidth();
@@ -273,6 +286,16 @@ function renderResult(text) {
         console.log('Set textContent to:', elements.result.textContent);
         if (text) {
             elements.result.style.display = 'block';
+            // 翻訳結果が表示されたらコピーボタンを表示
+            if (elements.copyButton) {
+                elements.copyButton.style.display = 'inline-block';
+            }
+        }
+        else {
+            // テキストが空の場合はコピーボタンを非表示
+            if (elements.copyButton) {
+                elements.copyButton.style.display = 'none';
+            }
         }
     }
 }
@@ -296,6 +319,9 @@ function resetResult() {
         elements.result.textContent = '';
         elements.result.classList.remove('gft-error');
         elements.result.style.display = 'none';
+    }
+    if (elements.copyButton) {
+        elements.copyButton.style.display = 'none';
     }
     renderStatus('');
     if (elements.action) {
@@ -341,6 +367,11 @@ function injectStyles() {
       min-width: 240px;
       padding: 16px;
     }
+    #${BUBBLE_ID} .gft-button-group {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
     #${BUBBLE_ID} .gft-action {
       padding: 6px 16px;
       border: none;
@@ -356,6 +387,25 @@ function injectStyles() {
       opacity: 0.9;
     }
     #${BUBBLE_ID} .gft-action:disabled {
+      opacity: 0.5;
+      cursor: default;
+    }
+    #${BUBBLE_ID} .gft-copy {
+      padding: 6px 16px;
+      border: none;
+      border-radius: 6px;
+      background: rgba(248, 250, 252, 0.1);
+      color: #f8fafc;
+      font-weight: 600;
+      font-size: 13px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.2s;
+    }
+    #${BUBBLE_ID} .gft-copy:hover {
+      background: rgba(248, 250, 252, 0.2);
+    }
+    #${BUBBLE_ID} .gft-copy:disabled {
       opacity: 0.5;
       cursor: default;
     }
@@ -395,4 +445,41 @@ function createRequestId() {
         return crypto.randomUUID();
     }
     return `req-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`;
+}
+function copyTranslationToClipboard() {
+    if (!elements.result) {
+        return;
+    }
+    const translationText = elements.result.textContent || '';
+    if (!translationText) {
+        return;
+    }
+    navigator.clipboard.writeText(translationText)
+        .then(() => {
+        // コピー成功時のフィードバック
+        if (elements.copyButton) {
+            const originalText = elements.copyButton.textContent;
+            elements.copyButton.textContent = 'コピーしました';
+            elements.copyButton.disabled = true;
+            setTimeout(() => {
+                if (elements.copyButton) {
+                    elements.copyButton.textContent = originalText;
+                    elements.copyButton.disabled = false;
+                }
+            }, 1500);
+        }
+    })
+        .catch((error) => {
+        console.error('クリップボードへのコピーに失敗しました:', error);
+        // エラー時のフィードバック
+        if (elements.copyButton) {
+            const originalText = elements.copyButton.textContent;
+            elements.copyButton.textContent = 'コピー失敗';
+            setTimeout(() => {
+                if (elements.copyButton) {
+                    elements.copyButton.textContent = originalText;
+                }
+            }, 1500);
+        }
+    });
 }

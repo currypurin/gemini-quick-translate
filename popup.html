@@ -68,6 +68,49 @@
         font-size: 14px;
         font-weight: 600;
       }
+      .width-control {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 8px;
+        padding: 12px;
+        margin-bottom: 16px;
+      }
+      .width-control h2 {
+        font-size: 14px;
+        margin: 0 0 8px;
+        font-weight: 600;
+      }
+      .width-buttons {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .width-buttons button {
+        background: linear-gradient(135deg, #2563eb, #a855f7);
+        border: none;
+        border-radius: 6px;
+        color: #fff;
+        font-size: 16px;
+        font-weight: 600;
+        width: 36px;
+        height: 36px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .width-buttons button:hover {
+        opacity: 0.9;
+      }
+      .width-buttons button:disabled {
+        opacity: 0.3;
+        cursor: not-allowed;
+      }
+      .width-display {
+        flex: 1;
+        text-align: center;
+        font-size: 14px;
+        font-weight: 600;
+      }
     </style>
   </head>
   <body>
@@ -79,6 +122,17 @@
           <span id="current-font-size">13</span>px
         </div>
         <button id="increase-font-size" type="button" aria-label="文字サイズを大きくする">＋</button>
+      </div>
+    </div>
+
+    <div class="width-control">
+      <h2>翻訳バブル横幅</h2>
+      <div class="width-buttons">
+        <button id="decrease-width" type="button" aria-label="横幅を小さくする">−</button>
+        <div class="width-display">
+          <span id="current-width">320</span>px
+        </div>
+        <button id="increase-width" type="button" aria-label="横幅を大きくする">＋</button>
       </div>
     </div>
 

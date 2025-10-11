@@ -41,19 +41,25 @@ type BackgroundToContentMessage = TranslationProgressMessage | TranslationErrorM
 
 const BUBBLE_ID = 'gft-inline-bubble';
 const MAX_SELECTION_LENGTH = 800;
+const MIN_FONT_SIZE = 11;
+const MAX_FONT_SIZE = 80;
+const DEFAULT_FONT_SIZE = 13;
+const FONT_SIZE_STORAGE_KEY = 'bubbleFontSize';
 
 interface TranslationState {
   requestId: string | null;
   selectedText: string;
   tone: TranslateTone;
   isTranslating: boolean;
+  fontSize: number;
 }
 
 const state: TranslationState = {
   requestId: null,
   selectedText: '',
   tone: DEFAULT_TONE,
-  isTranslating: false
+  isTranslating: false,
+  fontSize: DEFAULT_FONT_SIZE
 };
 
 const elements = {
@@ -69,6 +75,8 @@ init();
 function init() {
   injectStyles();
   preloadTonePreference();
+  preloadFontSize();
+  listenToStorageChanges();
   document.addEventListener('mouseup', handleSelectionChange);
   document.addEventListener('keyup', (event) => {
     if (event.key === 'Escape') {
@@ -109,6 +117,35 @@ function preloadTonePreference() {
     const tone = items.preferredTone;
     if (tone === 'polite' || tone === 'casual') {
       state.tone = tone;
+    }
+  });
+}
+
+function preloadFontSize() {
+  chrome.storage.local.get([FONT_SIZE_STORAGE_KEY], (items) => {
+    if (chrome.runtime.lastError) {
+      console.debug('文字サイズ設定の取得に失敗しました', chrome.runtime.lastError.message);
+      return;
+    }
+    const fontSize = items[FONT_SIZE_STORAGE_KEY];
+    if (typeof fontSize === 'number' && fontSize >= MIN_FONT_SIZE && fontSize <= MAX_FONT_SIZE) {
+      state.fontSize = fontSize;
+      applyFontSizeToBubble();
+    }
+  });
+}
+
+function listenToStorageChanges() {
+  chrome.storage.onChanged.addListener((changes, areaName) => {
+    if (areaName !== 'local') {
+      return;
+    }
+    if (changes[FONT_SIZE_STORAGE_KEY]) {
+      const newValue = changes[FONT_SIZE_STORAGE_KEY].newValue;
+      if (typeof newValue === 'number' && newValue >= MIN_FONT_SIZE && newValue <= MAX_FONT_SIZE) {
+        state.fontSize = newValue;
+        applyFontSizeToBubble();
+      }
     }
   });
 }
@@ -200,6 +237,9 @@ function ensureBubble() {
   elements.status = status;
   elements.result = result;
   elements.action = actionButton;
+
+  // 保存済みの文字サイズを適用
+  applyFontSizeToBubble();
 }
 
 function triggerTranslation() {
@@ -308,6 +348,15 @@ function resetResult() {
   }
 }
 
+function applyFontSizeToBubble() {
+  if (elements.result) {
+    elements.result.style.fontSize = `${state.fontSize}px`;
+  }
+  if (elements.preview) {
+    elements.preview.style.fontSize = `${state.fontSize}px`;
+  }
+}
+
 function injectStyles() {
   if (document.getElementById('gft-inline-style')) {
     return;
@@ -379,7 +428,6 @@ function injectStyles() {
       margin-bottom: 6px;
     }
     #${BUBBLE_ID} .gft-result {
-      font-size: 13px;
       white-space: pre-wrap;
       min-height: 20px;
       word-break: break-word;

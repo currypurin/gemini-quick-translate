@@ -46,12 +46,18 @@ const MAX_FONT_SIZE = 80;
 const DEFAULT_FONT_SIZE = 13;
 const FONT_SIZE_STORAGE_KEY = 'bubbleFontSize';
 
+const MIN_WIDTH = 240;
+const MAX_WIDTH = 1200;
+const DEFAULT_WIDTH = 320;
+const WIDTH_STORAGE_KEY = 'bubbleWidth';
+
 interface TranslationState {
   requestId: string | null;
   selectedText: string;
   tone: TranslateTone;
   isTranslating: boolean;
   fontSize: number;
+  bubbleWidth: number;
 }
 
 const state: TranslationState = {
@@ -59,7 +65,8 @@ const state: TranslationState = {
   selectedText: '',
   tone: DEFAULT_TONE,
   isTranslating: false,
-  fontSize: DEFAULT_FONT_SIZE
+  fontSize: DEFAULT_FONT_SIZE,
+  bubbleWidth: DEFAULT_WIDTH
 };
 
 const elements = {
@@ -76,6 +83,7 @@ function init() {
   injectStyles();
   preloadTonePreference();
   preloadFontSize();
+  preloadBubbleWidth();
   listenToStorageChanges();
   document.addEventListener('mouseup', handleSelectionChange);
   document.addEventListener('keyup', (event) => {
@@ -135,6 +143,20 @@ function preloadFontSize() {
   });
 }
 
+function preloadBubbleWidth() {
+  chrome.storage.local.get([WIDTH_STORAGE_KEY], (items) => {
+    if (chrome.runtime.lastError) {
+      console.debug('横幅設定の取得に失敗しました', chrome.runtime.lastError.message);
+      return;
+    }
+    const bubbleWidth = items[WIDTH_STORAGE_KEY];
+    if (typeof bubbleWidth === 'number' && bubbleWidth >= MIN_WIDTH && bubbleWidth <= MAX_WIDTH) {
+      state.bubbleWidth = bubbleWidth;
+      applyBubbleWidth();
+    }
+  });
+}
+
 function listenToStorageChanges() {
   chrome.storage.onChanged.addListener((changes, areaName) => {
     if (areaName !== 'local') {
@@ -145,6 +167,13 @@ function listenToStorageChanges() {
       if (typeof newValue === 'number' && newValue >= MIN_FONT_SIZE && newValue <= MAX_FONT_SIZE) {
         state.fontSize = newValue;
         applyFontSizeToBubble();
+      }
+    }
+    if (changes[WIDTH_STORAGE_KEY]) {
+      const newValue = changes[WIDTH_STORAGE_KEY].newValue;
+      if (typeof newValue === 'number' && newValue >= MIN_WIDTH && newValue <= MAX_WIDTH) {
+        state.bubbleWidth = newValue;
+        applyBubbleWidth();
       }
     }
   });
@@ -238,8 +267,9 @@ function ensureBubble() {
   elements.result = result;
   elements.action = actionButton;
 
-  // 保存済みの文字サイズを適用
+  // 保存済みの文字サイズと横幅を適用
   applyFontSizeToBubble();
+  applyBubbleWidth();
 }
 
 function triggerTranslation() {
@@ -357,6 +387,12 @@ function applyFontSizeToBubble() {
   }
 }
 
+function applyBubbleWidth() {
+  if (elements.bubble) {
+    elements.bubble.style.maxWidth = `${state.bubbleWidth}px`;
+  }
+}
+
 function injectStyles() {
   if (document.getElementById('gft-inline-style')) {
     return;
@@ -368,7 +404,6 @@ function injectStyles() {
       position: absolute;
       z-index: 2147483647;
       min-width: 240px;
-      max-width: 320px;
       background: rgba(15, 23, 42, 0.96);
       color: #f8fafc;
       border-radius: 12px;

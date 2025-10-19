@@ -37,6 +37,14 @@ export interface TranslationErrorMessage {
 
 export type BackgroundToContentMessage = TranslationProgressMessage | TranslationErrorMessage;
 
+export interface TranslationHistoryItem {
+  id: string;
+  originalText: string;
+  translation: string;
+  timestamp: number;
+  elapsedMs: number;
+}
+
 export const DEFAULT_TONE: TranslateTone = 'polite';
 
 export function isTranslateTextRequest(value: unknown): value is TranslateTextRequest {

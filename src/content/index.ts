@@ -51,6 +51,8 @@ const MAX_WIDTH = 1200;
 const DEFAULT_WIDTH = 320;
 const WIDTH_STORAGE_KEY = 'bubbleWidth';
 
+const EXTENSION_ENABLED_KEY = 'extensionEnabled';
+
 interface TranslationState {
   requestId: string | null;
   selectedText: string;
@@ -58,6 +60,7 @@ interface TranslationState {
   isTranslating: boolean;
   fontSize: number;
   bubbleWidth: number;
+  extensionEnabled: boolean;
 }
 
 const state: TranslationState = {
@@ -66,7 +69,8 @@ const state: TranslationState = {
   tone: DEFAULT_TONE,
   isTranslating: false,
   fontSize: DEFAULT_FONT_SIZE,
-  bubbleWidth: DEFAULT_WIDTH
+  bubbleWidth: DEFAULT_WIDTH,
+  extensionEnabled: true
 };
 
 const elements = {
@@ -85,6 +89,7 @@ function init() {
   preloadTonePreference();
   preloadFontSize();
   preloadBubbleWidth();
+  preloadExtensionEnabled();
   listenToStorageChanges();
   document.addEventListener('mouseup', handleSelectionChange);
   document.addEventListener('keyup', (event) => {
@@ -158,6 +163,21 @@ function preloadBubbleWidth() {
   });
 }
 
+function preloadExtensionEnabled() {
+  chrome.storage.local.get([EXTENSION_ENABLED_KEY], (items) => {
+    if (chrome.runtime.lastError) {
+      console.debug('拡張機能有効状態の取得に失敗しました', chrome.runtime.lastError.message);
+      return;
+    }
+    const extensionEnabled = items[EXTENSION_ENABLED_KEY];
+    if (typeof extensionEnabled === 'boolean') {
+      state.extensionEnabled = extensionEnabled;
+    } else {
+      state.extensionEnabled = true; // デフォルトは有効
+    }
+  });
+}
+
 function listenToStorageChanges() {
   chrome.storage.onChanged.addListener((changes, areaName) => {
     if (areaName !== 'local') {
@@ -177,10 +197,25 @@ function listenToStorageChanges() {
         applyBubbleWidth();
       }
     }
+    if (changes[EXTENSION_ENABLED_KEY]) {
+      const newValue = changes[EXTENSION_ENABLED_KEY].newValue;
+      if (typeof newValue === 'boolean') {
+        state.extensionEnabled = newValue;
+        // 無効化された場合はバブルを隠す
+        if (!newValue) {
+          hideBubble();
+        }
+      }
+    }
   });
 }
 
 function handleSelectionChange(event: MouseEvent) {
+  // 拡張機能が無効の場合は何もしない
+  if (!state.extensionEnabled) {
+    return;
+  }
+
   // バブル内のクリックの場合は無視
   if (event.target && elements.bubble && elements.bubble.contains(event.target as Node)) {
     return;

@@ -111,9 +111,164 @@
         font-size: 14px;
         font-weight: 600;
       }
+      .extension-toggle {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 8px;
+        padding: 12px;
+        margin-bottom: 16px;
+      }
+      .extension-toggle h2 {
+        font-size: 14px;
+        margin: 0 0 8px;
+        font-weight: 600;
+      }
+      .toggle-container {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .toggle-label {
+        font-size: 13px;
+        color: #f8fafc;
+      }
+      .toggle-switch {
+        position: relative;
+        width: 48px;
+        height: 24px;
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 12px;
+        cursor: pointer;
+        transition: background 0.3s;
+      }
+      .toggle-switch.active {
+        background: linear-gradient(135deg, #2563eb, #a855f7);
+      }
+      .toggle-switch::after {
+        content: '';
+        position: absolute;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background: #fff;
+        top: 2px;
+        left: 2px;
+        transition: left 0.3s;
+      }
+      .toggle-switch.active::after {
+        left: 26px;
+      }
+      .history-section {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 8px;
+        padding: 12px;
+        margin-bottom: 16px;
+      }
+      .history-section h2 {
+        font-size: 14px;
+        margin: 0 0 8px;
+        font-weight: 600;
+      }
+      .history-display-count {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 12px;
+      }
+      .history-display-count button {
+        background: linear-gradient(135deg, #2563eb, #a855f7);
+        border: none;
+        border-radius: 6px;
+        color: #fff;
+        font-size: 16px;
+        font-weight: 600;
+        width: 36px;
+        height: 36px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .history-display-count button:hover {
+        opacity: 0.9;
+      }
+      .history-display-count button:disabled {
+        opacity: 0.3;
+        cursor: not-allowed;
+      }
+      .history-count-display {
+        flex: 1;
+        text-align: center;
+        font-size: 14px;
+        font-weight: 600;
+      }
+      .history-list {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        max-height: 400px;
+        overflow-y: auto;
+      }
+      .history-item {
+        background: rgba(255, 255, 255, 0.03);
+        border-radius: 6px;
+        padding: 10px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+      }
+      .history-item-header {
+        margin-bottom: 6px;
+      }
+      .history-timestamp {
+        font-size: 11px;
+        color: rgba(248, 250, 252, 0.6);
+      }
+      .history-text {
+        font-size: 12px;
+        line-height: 1.4;
+        margin-bottom: 4px;
+      }
+      .history-text-label {
+        font-size: 10px;
+        color: rgba(248, 250, 252, 0.5);
+        margin-bottom: 2px;
+      }
+      .history-original {
+        color: rgba(248, 250, 252, 0.7);
+        margin-bottom: 6px;
+      }
+      .history-translation {
+        color: #f8fafc;
+      }
+      .history-copy-btn {
+        background: rgba(248, 250, 252, 0.1);
+        border: none;
+        border-radius: 4px;
+        color: #f8fafc;
+        font-size: 11px;
+        padding: 4px 8px;
+        cursor: pointer;
+        margin-top: 6px;
+        transition: background 0.2s;
+      }
+      .history-copy-btn:hover {
+        background: rgba(248, 250, 252, 0.2);
+      }
+      .history-empty {
+        text-align: center;
+        color: rgba(248, 250, 252, 0.5);
+        font-size: 12px;
+        padding: 20px;
+      }
     </style>
   </head>
   <body>
+    <div class="extension-toggle">
+      <h2>拡張機能</h2>
+      <div class="toggle-container">
+        <span class="toggle-label" id="toggle-status">有効</span>
+        <div class="toggle-switch active" id="extension-toggle" role="switch" aria-checked="true" tabindex="0"></div>
+      </div>
+    </div>
+
     <div class="font-size-control">
       <h2>翻訳バブル文字サイズ</h2>
       <div class="font-size-buttons">
@@ -136,13 +291,20 @@
       </div>
     </div>
 
-    <h1>翻訳履歴 (準備中)</h1>
-    <p>
-      このポップアップでは直近の翻訳履歴やAPI利用状況を表示する予定です。現段階では実装が未完了のため、オプションページでAPIキーを設定し、ページ上でテキストを選択して挙動を確認してください。
-    </p>
-    <p class="hint">
-      実装メモ: 履歴タブ、検索、フィルタ、ピン留めに対応予定。初期フェーズでは最新10件のリスト表示から着手します。
-    </p>
+    <div class="history-section">
+      <h2>翻訳履歴</h2>
+      <div class="history-display-count">
+        <button id="decrease-history-count" type="button" aria-label="表示件数を減らす">−</button>
+        <div class="history-count-display">
+          <span id="current-history-count">2</span>件表示
+        </div>
+        <button id="increase-history-count" type="button" aria-label="表示件数を増やす">＋</button>
+      </div>
+      <div class="history-list" id="history-list">
+        <div class="history-empty">履歴がありません</div>
+      </div>
+    </div>
+
     <script src="popup.js"></script>
   </body>
 </html>

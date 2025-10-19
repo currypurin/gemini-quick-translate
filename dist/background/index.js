@@ -1,5 +1,5 @@
 import { streamGeminiTranslation } from './api.js';
-import { getApiKey, getPreferredTone } from './storage.js';
+import { getApiKey, getPreferredTone, addTranslationToHistory } from './storage.js';
 import { DEFAULT_TONE, isTranslateTextRequest } from '../shared/messages.js';
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (!isTranslateTextRequest(message)) {
@@ -58,6 +58,17 @@ async function handleTranslateRequest(message, sender) {
             }
         }
         const elapsedMs = Date.now() - startedAt;
+        // 翻訳履歴に保存
+        const historyItem = {
+            id: requestId,
+            originalText: text,
+            translation: aggregated,
+            timestamp: Date.now(),
+            elapsedMs
+        };
+        addTranslationToHistory(historyItem).catch((error) => {
+            console.error('履歴の保存に失敗しました:', error);
+        });
         return {
             ok: true,
             requestId,

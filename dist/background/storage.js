@@ -1,6 +1,7 @@
 import { DEFAULT_TONE } from '../shared/messages.js';
 const API_KEY_STORAGE_KEY = 'geminiApiKey';
 const TONE_STORAGE_KEY = 'preferredTone';
+const EXTENSION_ENABLED_KEY = 'extensionEnabled';
 export async function getApiKey() {
     const result = await chrome.storage.local.get([API_KEY_STORAGE_KEY]);
     const value = result[API_KEY_STORAGE_KEY];
@@ -19,4 +20,16 @@ export async function getPreferredTone() {
 }
 export async function setPreferredTone(tone) {
     await chrome.storage.local.set({ [TONE_STORAGE_KEY]: tone });
+}
+export async function getExtensionEnabled() {
+    const result = await chrome.storage.local.get([EXTENSION_ENABLED_KEY]);
+    const value = result[EXTENSION_ENABLED_KEY];
+    // デフォルトは有効
+    if (typeof value === 'boolean') {
+        return value;
+    }
+    return true;
+}
+export async function setExtensionEnabled(enabled) {
+    await chrome.storage.local.set({ [EXTENSION_ENABLED_KEY]: enabled });
 }

@@ -111,9 +111,63 @@
         font-size: 14px;
         font-weight: 600;
       }
+      .extension-toggle {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 8px;
+        padding: 12px;
+        margin-bottom: 16px;
+      }
+      .extension-toggle h2 {
+        font-size: 14px;
+        margin: 0 0 8px;
+        font-weight: 600;
+      }
+      .toggle-container {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .toggle-label {
+        font-size: 13px;
+        color: #f8fafc;
+      }
+      .toggle-switch {
+        position: relative;
+        width: 48px;
+        height: 24px;
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 12px;
+        cursor: pointer;
+        transition: background 0.3s;
+      }
+      .toggle-switch.active {
+        background: linear-gradient(135deg, #2563eb, #a855f7);
+      }
+      .toggle-switch::after {
+        content: '';
+        position: absolute;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background: #fff;
+        top: 2px;
+        left: 2px;
+        transition: left 0.3s;
+      }
+      .toggle-switch.active::after {
+        left: 26px;
+      }
     </style>
   </head>
   <body>
+    <div class="extension-toggle">
+      <h2>拡張機能</h2>
+      <div class="toggle-container">
+        <span class="toggle-label" id="toggle-status">有効</span>
+        <div class="toggle-switch active" id="extension-toggle" role="switch" aria-checked="true" tabindex="0"></div>
+      </div>
+    </div>
+
     <div class="font-size-control">
       <h2>翻訳バブル文字サイズ</h2>
       <div class="font-size-buttons">

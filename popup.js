@@ -9,8 +9,11 @@ const DEFAULT_WIDTH = 320;
 const WIDTH_STORAGE_KEY = 'bubbleWidth';
 const WIDTH_STEP = 10;
 
+const EXTENSION_ENABLED_KEY = 'extensionEnabled';
+
 let currentFontSize = DEFAULT_FONT_SIZE;
 let currentWidth = DEFAULT_WIDTH;
+let extensionEnabled = true;
 
 // DOM要素
 const decreaseFontButton = document.getElementById('decrease-font-size');
@@ -21,10 +24,14 @@ const decreaseWidthButton = document.getElementById('decrease-width');
 const increaseWidthButton = document.getElementById('increase-width');
 const widthDisplay = document.getElementById('current-width');
 
+const extensionToggle = document.getElementById('extension-toggle');
+const toggleStatus = document.getElementById('toggle-status');
+
 // 初期化
 init();
 
 function init() {
+  loadExtensionEnabled();
   loadFontSize();
   loadWidth();
 
@@ -42,6 +49,14 @@ function init() {
 
   increaseWidthButton.addEventListener('click', () => {
     changeWidth(WIDTH_STEP);
+  });
+
+  extensionToggle.addEventListener('click', toggleExtension);
+  extensionToggle.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      toggleExtension();
+    }
   });
 }
 
@@ -131,4 +146,46 @@ function updateWidthUI() {
   // ボタンの有効/無効を切り替え
   decreaseWidthButton.disabled = currentWidth <= MIN_WIDTH;
   increaseWidthButton.disabled = currentWidth >= MAX_WIDTH;
+}
+
+async function loadExtensionEnabled() {
+  try {
+    const result = await chrome.storage.local.get([EXTENSION_ENABLED_KEY]);
+    const savedEnabled = result[EXTENSION_ENABLED_KEY];
+
+    if (typeof savedEnabled === 'boolean') {
+      extensionEnabled = savedEnabled;
+    } else {
+      extensionEnabled = true; // デフォルトは有効
+    }
+
+    updateToggleUI();
+  } catch (error) {
+    console.error('拡張機能有効状態の読み込みに失敗しました:', error);
+    extensionEnabled = true;
+    updateToggleUI();
+  }
+}
+
+async function toggleExtension() {
+  extensionEnabled = !extensionEnabled;
+
+  try {
+    await chrome.storage.local.set({ [EXTENSION_ENABLED_KEY]: extensionEnabled });
+    updateToggleUI();
+  } catch (error) {
+    console.error('拡張機能有効状態の保存に失敗しました:', error);
+  }
+}
+
+function updateToggleUI() {
+  if (extensionEnabled) {
+    extensionToggle.classList.add('active');
+    extensionToggle.setAttribute('aria-checked', 'true');
+    toggleStatus.textContent = '有効';
+  } else {
+    extensionToggle.classList.remove('active');
+    extensionToggle.setAttribute('aria-checked', 'false');
+    toggleStatus.textContent = '無効';
+  }
 }

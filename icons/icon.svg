@@ -1,0 +1,12 @@
+<svg width="128" height="128" viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg">
+  <!-- 「翻」の文字 -->
+  <text
+    x="64"
+    y="115"
+    font-family="'Hiragino Sans', 'Noto Sans JP', 'Yu Gothic', sans-serif"
+    font-size="120"
+    font-weight="bold"
+    fill="#1a73e8"
+    text-anchor="middle"
+  >翻</text>
+</svg>

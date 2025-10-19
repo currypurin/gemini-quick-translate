@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Gemini Flashlight Translator",
   "description": "選択した英語テキストをGemini 2.5 Flashlightでストリーミング翻訳するChrome拡張",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "permissions": [
     "storage",
     "activeTab",

@@ -12,9 +12,16 @@ interface StreamTranslationParams {
 const decoder = new TextDecoder('utf-8');
 
 export async function* streamGeminiTranslation({ apiKey, text, tone }: StreamTranslationParams): AsyncGenerator<string> {
-  const response = await fetch(`${ENDPOINT}?key=${encodeURIComponent(apiKey)}`, {
+  // APIキーをHTTPヘッダーで送信（URLクエリパラメータより安全）
+  // - ブラウザ履歴に記録されない
+  // - プロキシログに残らない
+  // - リファラーヘッダーで漏洩しない
+  const response = await fetch(ENDPOINT, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      'x-goog-api-key': apiKey
+    },
     body: JSON.stringify(buildRequestPayload(text, tone)),
   });
 

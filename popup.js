@@ -39,11 +39,14 @@ const decreaseHistoryCountButton = document.getElementById('decrease-history-cou
 const increaseHistoryCountButton = document.getElementById('increase-history-count');
 const historyCountDisplay = document.getElementById('current-history-count');
 const historyListElement = document.getElementById('history-list');
+const tabButtons = document.querySelectorAll('.tab-button');
+const tabPanels = document.querySelectorAll('.tab-panel');
 
 // 初期化
 init();
 
 function init() {
+  setupTabs();
   loadExtensionEnabled();
   loadFontSize();
   loadWidth();
@@ -101,6 +104,39 @@ function init() {
         renderHistory();
       }
     }
+  });
+}
+
+function setupTabs() {
+  if (tabButtons.length === 0 || tabPanels.length === 0) {
+    return;
+  }
+
+  tabButtons.forEach((button) => {
+    button.addEventListener('click', () => {
+      const targetId = button.getAttribute('data-tab-target');
+      if (targetId) {
+        activateTab(targetId);
+      }
+    });
+  });
+
+  const initiallyActive = document.querySelector('.tab-button.active');
+  const initialTarget = initiallyActive?.getAttribute('data-tab-target') ?? tabPanels[0].id;
+  activateTab(initialTarget);
+}
+
+function activateTab(targetId) {
+  tabButtons.forEach((button) => {
+    const isActive = button.getAttribute('data-tab-target') === targetId;
+    button.classList.toggle('active', isActive);
+    button.setAttribute('aria-selected', String(isActive));
+  });
+
+  tabPanels.forEach((panel) => {
+    const isActive = panel.id === targetId;
+    panel.classList.toggle('active', isActive);
+    panel.setAttribute('aria-hidden', String(!isActive));
   });
 }
 

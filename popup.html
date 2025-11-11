@@ -12,6 +12,39 @@
         background: #0f172a;
         color: #f8fafc;
       }
+      .tab-container {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+      .tab-list {
+        display: flex;
+        gap: 8px;
+      }
+      .tab-button {
+        flex: 1;
+        padding: 10px 0;
+        background: rgba(255, 255, 255, 0.08);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 8px;
+        color: #f8fafc;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.2s, border-color 0.2s;
+      }
+      .tab-button.active {
+        background: linear-gradient(135deg, #2563eb, #a855f7);
+        border-color: transparent;
+      }
+      .tab-panel {
+        display: none;
+        flex-direction: column;
+        gap: 16px;
+      }
+      .tab-panel.active {
+        display: flex;
+      }
       h1 {
         font-size: 16px;
         margin: 0 0 12px;
@@ -261,47 +294,62 @@
     </style>
   </head>
   <body>
-    <div class="extension-toggle">
-      <h2>拡張機能</h2>
-      <div class="toggle-container">
-        <span class="toggle-label" id="toggle-status">有効</span>
-        <div class="toggle-switch active" id="extension-toggle" role="switch" aria-checked="true" tabindex="0"></div>
+    <div class="tab-container">
+      <div class="tab-list" role="tablist" aria-label="設定タブ">
+        <button class="tab-button active" id="tab-status-button" data-tab-target="tab-status" role="tab" aria-selected="true">
+          ステータス
+        </button>
+        <button class="tab-button" id="tab-appearance-button" data-tab-target="tab-appearance" role="tab" aria-selected="false">
+          表示設定
+        </button>
       </div>
-    </div>
 
-    <div class="font-size-control">
-      <h2>翻訳バブル文字サイズ</h2>
-      <div class="font-size-buttons">
-        <button id="decrease-font-size" type="button" aria-label="文字サイズを小さくする">−</button>
-        <div class="font-size-display">
-          <span id="current-font-size">13</span>px
+      <div class="tab-panel active" id="tab-status" role="tabpanel" aria-labelledby="tab-status-button">
+        <div class="extension-toggle">
+          <h2>拡張機能</h2>
+          <div class="toggle-container">
+            <span class="toggle-label" id="toggle-status">有効</span>
+            <div class="toggle-switch active" id="extension-toggle" role="switch" aria-checked="true" tabindex="0"></div>
+          </div>
         </div>
-        <button id="increase-font-size" type="button" aria-label="文字サイズを大きくする">＋</button>
-      </div>
-    </div>
 
-    <div class="width-control">
-      <h2>翻訳バブル横幅</h2>
-      <div class="width-buttons">
-        <button id="decrease-width" type="button" aria-label="横幅を小さくする">−</button>
-        <div class="width-display">
-          <span id="current-width">320</span>px
+        <div class="history-section">
+          <h2>翻訳履歴</h2>
+          <div class="history-display-count">
+            <button id="decrease-history-count" type="button" aria-label="表示件数を減らす">−</button>
+            <div class="history-count-display">
+              <span id="current-history-count">2</span>件表示
+            </div>
+            <button id="increase-history-count" type="button" aria-label="表示件数を増やす">＋</button>
+          </div>
+          <div class="history-list" id="history-list">
+            <div class="history-empty">履歴がありません</div>
+          </div>
         </div>
-        <button id="increase-width" type="button" aria-label="横幅を大きくする">＋</button>
       </div>
-    </div>
 
-    <div class="history-section">
-      <h2>翻訳履歴</h2>
-      <div class="history-display-count">
-        <button id="decrease-history-count" type="button" aria-label="表示件数を減らす">−</button>
-        <div class="history-count-display">
-          <span id="current-history-count">2</span>件表示
+      <div class="tab-panel" id="tab-appearance" role="tabpanel" aria-labelledby="tab-appearance-button" aria-hidden="true">
+        <div class="font-size-control">
+          <h2>翻訳バブル文字サイズ</h2>
+          <div class="font-size-buttons">
+            <button id="decrease-font-size" type="button" aria-label="文字サイズを小さくする">−</button>
+            <div class="font-size-display">
+              <span id="current-font-size">13</span>px
+            </div>
+            <button id="increase-font-size" type="button" aria-label="文字サイズを大きくする">＋</button>
+          </div>
         </div>
-        <button id="increase-history-count" type="button" aria-label="表示件数を増やす">＋</button>
-      </div>
-      <div class="history-list" id="history-list">
-        <div class="history-empty">履歴がありません</div>
+
+        <div class="width-control">
+          <h2>翻訳バブル横幅</h2>
+          <div class="width-buttons">
+            <button id="decrease-width" type="button" aria-label="横幅を小さくする">−</button>
+            <div class="width-display">
+              <span id="current-width">320</span>px
+            </div>
+            <button id="increase-width" type="button" aria-label="横幅を大きくする">＋</button>
+          </div>
+        </div>
       </div>
     </div>
 

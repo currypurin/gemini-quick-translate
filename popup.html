@@ -58,6 +58,51 @@
         font-size: 11px;
         opacity: 0.7;
       }
+      .api-key-section {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 8px;
+        padding: 12px;
+        margin-bottom: 16px;
+      }
+      .api-key-section h2 {
+        font-size: 14px;
+        margin: 0 0 8px;
+        font-weight: 600;
+      }
+      .api-key-description {
+        font-size: 12px;
+        color: rgba(248, 250, 252, 0.75);
+        margin: 0 0 10px;
+      }
+      .api-key-form {
+        display: flex;
+        gap: 8px;
+      }
+      .api-key-form input {
+        flex: 1;
+        padding: 8px;
+        border-radius: 6px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        background: rgba(15, 23, 42, 0.6);
+        color: #f8fafc;
+      }
+      .api-key-form button {
+        padding: 8px 12px;
+        border: none;
+        border-radius: 6px;
+        font-size: 13px;
+        font-weight: 600;
+        color: #fff;
+        background: linear-gradient(135deg, #2563eb, #a855f7);
+        cursor: pointer;
+        white-space: nowrap;
+      }
+      .api-key-status {
+        font-size: 12px;
+        margin-top: 8px;
+        min-height: 16px;
+        color: rgba(248, 250, 252, 0.8);
+      }
       .font-size-control {
         background: rgba(255, 255, 255, 0.05);
         border-radius: 8px;
@@ -297,7 +342,7 @@
     <div class="tab-container">
       <div class="tab-list" role="tablist" aria-label="設定タブ">
         <button class="tab-button active" id="tab-status-button" data-tab-target="tab-status" role="tab" aria-selected="true">
-          ステータス
+          利用設定
         </button>
         <button class="tab-button" id="tab-appearance-button" data-tab-target="tab-appearance" role="tab" aria-selected="false">
           表示設定
@@ -305,6 +350,16 @@
       </div>
 
       <div class="tab-panel active" id="tab-status" role="tabpanel" aria-labelledby="tab-status-button">
+        <div class="api-key-section">
+          <h2>Gemini APIキー</h2>
+          <p class="api-key-description">キーを保存すると翻訳が利用できます。貼り付け後に保存ボタンを押してください。</p>
+          <div class="api-key-form">
+            <input id="popup-api-key" type="password" placeholder="APIキーを入力" autocomplete="off" />
+            <button id="popup-api-key-save" type="button">保存</button>
+          </div>
+          <div class="api-key-status" id="popup-api-key-status" role="status"></div>
+        </div>
+
         <div class="extension-toggle">
           <h2>拡張機能</h2>
           <div class="toggle-container">

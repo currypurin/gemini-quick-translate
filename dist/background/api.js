@@ -1,8 +1,7 @@
-const MODEL_ID = 'gemini-flash-lite-latest';
-const ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_ID}:streamGenerateContent`;
 const decoder = new TextDecoder('utf-8');
-export async function* streamGeminiTranslation({ apiKey, text, tone }) {
-    const response = await fetch(`${ENDPOINT}?key=${encodeURIComponent(apiKey)}`, {
+export async function* streamGeminiTranslation({ apiKey, text, tone, modelId }) {
+    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:streamGenerateContent`;
+    const response = await fetch(`${endpoint}?key=${encodeURIComponent(apiKey)}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(buildRequestPayload(text, tone)),

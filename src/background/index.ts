@@ -1,5 +1,6 @@
 import { streamGeminiTranslation } from './api.js';
-import { getApiKey, getPreferredTone, addTranslationToHistory } from './storage.js';
+import { getApiKey, getPreferredTone, getModelId, addTranslationToHistory } from './storage.js';
+import { DEFAULT_MODEL_ID } from './storage.js';
 import type {
   BackgroundToContentMessage,
   TranslateTextRequest,
@@ -50,6 +51,7 @@ async function handleTranslateRequest(
   }
 
   const tone = requestedTone ?? (await getPreferredTone().catch(() => DEFAULT_TONE));
+  const modelId = await getModelId().catch(() => DEFAULT_MODEL_ID);
   const startedAt = Date.now();
   const tabId = typeof sender.tab?.id === 'number' ? sender.tab.id : null;
 
@@ -58,7 +60,8 @@ async function handleTranslateRequest(
     for await (const chunk of streamGeminiTranslation({
       apiKey,
       text,
-      tone
+      tone,
+      modelId
     })) {
       aggregated += chunk;
       if (tabId !== null && chunk) {

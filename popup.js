@@ -1,3 +1,5 @@
+const API_KEY_STORAGE_KEY = 'geminiApiKey';
+
 const MIN_FONT_SIZE = 11;
 const MAX_FONT_SIZE = 80;
 const DEFAULT_FONT_SIZE = 13;
@@ -11,6 +13,9 @@ const WIDTH_STEP = 10;
 
 const EXTENSION_ENABLED_KEY = 'extensionEnabled';
 
+const MODEL_ID_STORAGE_KEY = 'geminiModelId';
+const DEFAULT_MODEL_ID = 'gemini-2.5-flash-lite';
+
 const TRANSLATION_HISTORY_KEY = 'translationHistory';
 const HISTORY_DISPLAY_COUNT_KEY = 'historyDisplayCount';
 const MIN_DISPLAY_COUNT = 1;
@@ -22,6 +27,7 @@ let currentWidth = DEFAULT_WIDTH;
 let extensionEnabled = true;
 let historyDisplayCount = DEFAULT_DISPLAY_COUNT;
 let translationHistory = [];
+let currentModelId = DEFAULT_MODEL_ID;
 
 // DOM要素
 const decreaseFontButton = document.getElementById('decrease-font-size');
@@ -39,11 +45,20 @@ const decreaseHistoryCountButton = document.getElementById('decrease-history-cou
 const increaseHistoryCountButton = document.getElementById('increase-history-count');
 const historyCountDisplay = document.getElementById('current-history-count');
 const historyListElement = document.getElementById('history-list');
+const modelOptionsContainer = document.getElementById('model-options');
+const tabButtons = document.querySelectorAll('.tab-button');
+const tabPanels = document.querySelectorAll('.tab-panel');
+const apiKeyInput = document.getElementById('popup-api-key');
+const apiKeySaveButton = document.getElementById('popup-api-key-save');
+const apiKeyStatus = document.getElementById('popup-api-key-status');
 
 // 初期化
 init();
 
 function init() {
+  setupTabs();
+  setupApiKeySection();
+  setupModelSelect();
   loadExtensionEnabled();
   loadFontSize();
   loadWidth();
@@ -101,6 +116,142 @@ function init() {
         renderHistory();
       }
     }
+
+    if (changes[API_KEY_STORAGE_KEY] && apiKeyStatus) {
+      const newValue = changes[API_KEY_STORAGE_KEY].newValue;
+      if (typeof newValue === 'string' && newValue.trim().length > 0) {
+        updateApiKeyStatus('APIキーは保存済みです。');
+      } else {
+        updateApiKeyStatus('APIキーが未設定です。', true);
+      }
+    }
+  });
+}
+
+function setupApiKeySection() {
+  if (!apiKeyInput || !apiKeySaveButton || !apiKeyStatus) {
+    return;
+  }
+
+  apiKeySaveButton.addEventListener('click', () => {
+    const value = apiKeyInput.value.trim();
+    if (!value) {
+      updateApiKeyStatus('APIキーを入力してください。', true);
+      return;
+    }
+
+    chrome.storage.local.set({ [API_KEY_STORAGE_KEY]: value }, () => {
+      const lastError = chrome.runtime.lastError;
+      if (lastError) {
+        updateApiKeyStatus(`保存に失敗しました: ${lastError.message}`, true);
+        return;
+      }
+      apiKeyInput.value = '';
+      updateApiKeyStatus('APIキーを保存しました。必要に応じて再入力できます。');
+    });
+  });
+
+  chrome.storage.local.get([API_KEY_STORAGE_KEY], (items) => {
+    const lastError = chrome.runtime.lastError;
+    if (lastError) {
+      updateApiKeyStatus(`読み込みに失敗しました: ${lastError.message}`, true);
+      return;
+    }
+    const stored = items[API_KEY_STORAGE_KEY];
+    if (typeof stored === 'string' && stored.trim().length > 0) {
+      updateApiKeyStatus('APIキーは保存済みです。');
+    } else {
+      updateApiKeyStatus('APIキーが未設定です。', true);
+    }
+  });
+}
+
+function updateApiKeyStatus(message, isError = false) {
+  if (!apiKeyStatus) {
+    return;
+  }
+  apiKeyStatus.textContent = message;
+  apiKeyStatus.style.color = isError ? '#f87171' : '#c7d2fe';
+}
+
+function setupModelSelect() {
+  if (!modelOptionsContainer) return;
+
+  // 保存されたモデルを読み込み
+  chrome.storage.local.get([MODEL_ID_STORAGE_KEY], (items) => {
+    const lastError = chrome.runtime.lastError;
+    if (lastError) {
+      console.error('モデル設定の読み込みに失敗しました:', lastError.message);
+      return;
+    }
+    const saved = items[MODEL_ID_STORAGE_KEY];
+    if (saved === 'gemini-2.5-flash-lite' || saved === 'gemini-3.1-flash-lite-preview') {
+      currentModelId = saved;
+    }
+    updateModelUI();
+  });
+
+  // クリックイベント
+  const modelOptions = modelOptionsContainer.querySelectorAll('.model-option');
+  modelOptions.forEach((option) => {
+    option.addEventListener('click', () => {
+      const modelId = option.getAttribute('data-model');
+      if (modelId && modelId !== currentModelId) {
+        currentModelId = modelId;
+        chrome.storage.local.set({ [MODEL_ID_STORAGE_KEY]: modelId }, () => {
+          const lastError = chrome.runtime.lastError;
+          if (lastError) {
+            console.error('モデル設定の保存に失敗しました:', lastError.message);
+          }
+        });
+        updateModelUI();
+      }
+    });
+  });
+}
+
+function updateModelUI() {
+  if (!modelOptionsContainer) return;
+  const options = modelOptionsContainer.querySelectorAll('.model-option');
+  options.forEach((option) => {
+    const modelId = option.getAttribute('data-model');
+    const radio = option.querySelector('input[type="radio"]');
+    const isSelected = modelId === currentModelId;
+    option.classList.toggle('selected', isSelected);
+    if (radio) radio.checked = isSelected;
+  });
+}
+
+function setupTabs() {
+  if (tabButtons.length === 0 || tabPanels.length === 0) {
+    return;
+  }
+
+  tabButtons.forEach((button) => {
+    button.addEventListener('click', () => {
+      const targetId = button.getAttribute('data-tab-target');
+      if (targetId) {
+        activateTab(targetId);
+      }
+    });
+  });
+
+  const initiallyActive = document.querySelector('.tab-button.active');
+  const initialTarget = initiallyActive?.getAttribute('data-tab-target') ?? tabPanels[0].id;
+  activateTab(initialTarget);
+}
+
+function activateTab(targetId) {
+  tabButtons.forEach((button) => {
+    const isActive = button.getAttribute('data-tab-target') === targetId;
+    button.classList.toggle('active', isActive);
+    button.setAttribute('aria-selected', String(isActive));
+  });
+
+  tabPanels.forEach((panel) => {
+    const isActive = panel.id === targetId;
+    panel.classList.toggle('active', isActive);
+    panel.setAttribute('aria-hidden', String(!isActive));
   });
 }
 

@@ -1,18 +1,17 @@
 import type { TranslateTone } from '../shared/messages.js';
 
-const MODEL_ID = 'gemini-flash-lite-latest';
-const ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_ID}:streamGenerateContent`;
-
 interface StreamTranslationParams {
   apiKey: string;
   text: string;
   tone: TranslateTone;
+  modelId: string;
 }
 
 const decoder = new TextDecoder('utf-8');
 
-export async function* streamGeminiTranslation({ apiKey, text, tone }: StreamTranslationParams): AsyncGenerator<string> {
-  const response = await fetch(`${ENDPOINT}?key=${encodeURIComponent(apiKey)}`, {
+export async function* streamGeminiTranslation({ apiKey, text, tone, modelId }: StreamTranslationParams): AsyncGenerator<string> {
+  const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:streamGenerateContent`;
+  const response = await fetch(`${endpoint}?key=${encodeURIComponent(apiKey)}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(buildRequestPayload(text, tone)),

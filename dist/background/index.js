@@ -1,5 +1,6 @@
 import { streamGeminiTranslation } from './api.js';
-import { getApiKey, getPreferredTone, addTranslationToHistory } from './storage.js';
+import { getApiKey, getPreferredTone, getModelId, addTranslationToHistory } from './storage.js';
+import { DEFAULT_MODEL_ID } from './storage.js';
 import { DEFAULT_TONE, isTranslateTextRequest } from '../shared/messages.js';
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (!isTranslateTextRequest(message)) {
@@ -36,6 +37,7 @@ async function handleTranslateRequest(message, sender) {
         };
     }
     const tone = requestedTone !== null && requestedTone !== void 0 ? requestedTone : (await getPreferredTone().catch(() => DEFAULT_TONE));
+    const modelId = await getModelId().catch(() => DEFAULT_MODEL_ID);
     const startedAt = Date.now();
     const tabId = typeof ((_a = sender.tab) === null || _a === void 0 ? void 0 : _a.id) === 'number' ? sender.tab.id : null;
     try {
@@ -43,7 +45,8 @@ async function handleTranslateRequest(message, sender) {
         for await (const chunk of streamGeminiTranslation({
             apiKey,
             text,
-            tone
+            tone,
+            modelId
         })) {
             aggregated += chunk;
             if (tabId !== null && chunk) {

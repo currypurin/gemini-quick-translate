@@ -6,6 +6,10 @@ const TONE_STORAGE_KEY = 'preferredTone';
 const EXTENSION_ENABLED_KEY = 'extensionEnabled';
 const TRANSLATION_HISTORY_KEY = 'translationHistory';
 const HISTORY_DISPLAY_COUNT_KEY = 'historyDisplayCount';
+const MODEL_ID_STORAGE_KEY = 'geminiModelId';
+
+export type GeminiModelId = 'gemini-2.5-flash-lite' | 'gemini-3.1-flash-lite-preview';
+export const DEFAULT_MODEL_ID: GeminiModelId = 'gemini-2.5-flash-lite';
 
 const MAX_HISTORY_ITEMS = 15;
 const DEFAULT_DISPLAY_COUNT = 2;
@@ -83,4 +87,17 @@ export async function getHistoryDisplayCount(): Promise<number> {
 
 export async function setHistoryDisplayCount(count: number): Promise<void> {
   await chrome.storage.local.set({ [HISTORY_DISPLAY_COUNT_KEY]: count });
+}
+
+export async function getModelId(): Promise<GeminiModelId> {
+  const result = await chrome.storage.local.get([MODEL_ID_STORAGE_KEY]);
+  const value = result[MODEL_ID_STORAGE_KEY];
+  if (value === 'gemini-2.5-flash-lite' || value === 'gemini-3.1-flash-lite-preview') {
+    return value;
+  }
+  return DEFAULT_MODEL_ID;
+}
+
+export async function setModelId(modelId: GeminiModelId): Promise<void> {
+  await chrome.storage.local.set({ [MODEL_ID_STORAGE_KEY]: modelId });
 }

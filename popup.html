@@ -235,6 +235,48 @@
       .toggle-switch.active::after {
         left: 26px;
       }
+      .model-select-section {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 8px;
+        padding: 12px;
+        margin-bottom: 16px;
+      }
+      .model-select-section h2 {
+        font-size: 14px;
+        margin: 0 0 8px;
+        font-weight: 600;
+      }
+      .model-options {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      .model-option {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 10px;
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 6px;
+        cursor: pointer;
+        transition: background 0.2s, border-color 0.2s;
+      }
+      .model-option:hover {
+        background: rgba(255, 255, 255, 0.08);
+      }
+      .model-option.selected {
+        border-color: #a855f7;
+        background: rgba(168, 85, 247, 0.1);
+      }
+      .model-option input[type="radio"] {
+        accent-color: #a855f7;
+        margin: 0;
+      }
+      .model-option label {
+        font-size: 13px;
+        cursor: pointer;
+      }
       .history-section {
         background: rgba(255, 255, 255, 0.05);
         border-radius: 8px;
@@ -365,6 +407,20 @@
           <div class="toggle-container">
             <span class="toggle-label" id="toggle-status">有効</span>
             <div class="toggle-switch active" id="extension-toggle" role="switch" aria-checked="true" tabindex="0"></div>
+          </div>
+        </div>
+
+        <div class="model-select-section">
+          <h2>翻訳モデル</h2>
+          <div class="model-options" id="model-options">
+            <div class="model-option selected" data-model="gemini-2.5-flash-lite">
+              <input type="radio" name="model" id="model-2.5" value="gemini-2.5-flash-lite" checked />
+              <label for="model-2.5">Gemini 2.5 Flash Lite</label>
+            </div>
+            <div class="model-option" data-model="gemini-3.1-flash-lite-preview">
+              <input type="radio" name="model" id="model-3.1" value="gemini-3.1-flash-lite-preview" />
+              <label for="model-3.1">Gemini 3.1 Flash Lite (Preview)</label>
+            </div>
           </div>
         </div>
 

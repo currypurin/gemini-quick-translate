@@ -13,6 +13,9 @@ const WIDTH_STEP = 10;
 
 const EXTENSION_ENABLED_KEY = 'extensionEnabled';
 
+const MODEL_ID_STORAGE_KEY = 'geminiModelId';
+const DEFAULT_MODEL_ID = 'gemini-2.5-flash-lite';
+
 const TRANSLATION_HISTORY_KEY = 'translationHistory';
 const HISTORY_DISPLAY_COUNT_KEY = 'historyDisplayCount';
 const MIN_DISPLAY_COUNT = 1;
@@ -24,6 +27,7 @@ let currentWidth = DEFAULT_WIDTH;
 let extensionEnabled = true;
 let historyDisplayCount = DEFAULT_DISPLAY_COUNT;
 let translationHistory = [];
+let currentModelId = DEFAULT_MODEL_ID;
 
 // DOM要素
 const decreaseFontButton = document.getElementById('decrease-font-size');
@@ -41,6 +45,7 @@ const decreaseHistoryCountButton = document.getElementById('decrease-history-cou
 const increaseHistoryCountButton = document.getElementById('increase-history-count');
 const historyCountDisplay = document.getElementById('current-history-count');
 const historyListElement = document.getElementById('history-list');
+const modelOptionsContainer = document.getElementById('model-options');
 const tabButtons = document.querySelectorAll('.tab-button');
 const tabPanels = document.querySelectorAll('.tab-panel');
 const apiKeyInput = document.getElementById('popup-api-key');
@@ -53,6 +58,7 @@ init();
 function init() {
   setupTabs();
   setupApiKeySection();
+  setupModelSelect();
   loadExtensionEnabled();
   loadFontSize();
   loadWidth();
@@ -166,6 +172,54 @@ function updateApiKeyStatus(message, isError = false) {
   }
   apiKeyStatus.textContent = message;
   apiKeyStatus.style.color = isError ? '#f87171' : '#c7d2fe';
+}
+
+function setupModelSelect() {
+  if (!modelOptionsContainer) return;
+
+  // 保存されたモデルを読み込み
+  chrome.storage.local.get([MODEL_ID_STORAGE_KEY], (items) => {
+    const lastError = chrome.runtime.lastError;
+    if (lastError) {
+      console.error('モデル設定の読み込みに失敗しました:', lastError.message);
+      return;
+    }
+    const saved = items[MODEL_ID_STORAGE_KEY];
+    if (saved === 'gemini-2.5-flash-lite' || saved === 'gemini-3.1-flash-lite-preview') {
+      currentModelId = saved;
+    }
+    updateModelUI();
+  });
+
+  // クリックイベント
+  const modelOptions = modelOptionsContainer.querySelectorAll('.model-option');
+  modelOptions.forEach((option) => {
+    option.addEventListener('click', () => {
+      const modelId = option.getAttribute('data-model');
+      if (modelId && modelId !== currentModelId) {
+        currentModelId = modelId;
+        chrome.storage.local.set({ [MODEL_ID_STORAGE_KEY]: modelId }, () => {
+          const lastError = chrome.runtime.lastError;
+          if (lastError) {
+            console.error('モデル設定の保存に失敗しました:', lastError.message);
+          }
+        });
+        updateModelUI();
+      }
+    });
+  });
+}
+
+function updateModelUI() {
+  if (!modelOptionsContainer) return;
+  const options = modelOptionsContainer.querySelectorAll('.model-option');
+  options.forEach((option) => {
+    const modelId = option.getAttribute('data-model');
+    const radio = option.querySelector('input[type="radio"]');
+    const isSelected = modelId === currentModelId;
+    option.classList.toggle('selected', isSelected);
+    if (radio) radio.checked = isSelected;
+  });
 }
 
 function setupTabs() {

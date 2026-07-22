@@ -4,7 +4,7 @@ export async function* streamGeminiTranslation({ apiKey, text, tone, modelId }) 
     const response = await fetch(`${endpoint}?key=${encodeURIComponent(apiKey)}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(buildRequestPayload(text, tone)),
+        body: JSON.stringify(buildRequestPayload(text, tone, modelId)),
     });
     if (!response.ok) {
         const errorBody = await safeReadText(response).catch(() => '');
@@ -56,7 +56,7 @@ export async function* streamGeminiTranslation({ apiKey, text, tone, modelId }) 
         }
     }
 }
-function buildRequestPayload(text, tone) {
+export function buildRequestPayload(text, tone, modelId) {
     const toneInstruction = tone === 'casual'
         ? 'Use natural, casual Japanese suitable for friendly conversations.'
         : 'Use concise, polite Japanese suitable for professional documents.';
@@ -82,9 +82,9 @@ function buildRequestPayload(text, tone) {
             }
         ],
         generationConfig: {
-            thinkingConfig: {
-                thinkingBudget: 0
-            }
+            thinkingConfig: modelId === 'gemini-3.5-flash-lite'
+                ? { thinkingLevel: 'minimal' }
+                : { thinkingBudget: 0 }
         },
         tools: [
             {

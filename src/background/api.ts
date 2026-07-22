@@ -1,10 +1,11 @@
 import type { TranslateTone } from '../shared/messages.js';
+import type { GeminiModelId } from './storage.js';
 
 interface StreamTranslationParams {
   apiKey: string;
   text: string;
   tone: TranslateTone;
-  modelId: string;
+  modelId: GeminiModelId;
 }
 
 const decoder = new TextDecoder('utf-8');
@@ -14,7 +15,7 @@ export async function* streamGeminiTranslation({ apiKey, text, tone, modelId }: 
   const response = await fetch(`${endpoint}?key=${encodeURIComponent(apiKey)}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(buildRequestPayload(text, tone)),
+    body: JSON.stringify(buildRequestPayload(text, tone, modelId)),
   });
 
   if (!response.ok) {
@@ -79,7 +80,7 @@ export async function* streamGeminiTranslation({ apiKey, text, tone, modelId }: 
 
 }
 
-function buildRequestPayload(text: string, tone: TranslateTone) {
+export function buildRequestPayload(text: string, tone: TranslateTone, modelId: GeminiModelId) {
   const toneInstruction = tone === 'casual'
     ? 'Use natural, casual Japanese suitable for friendly conversations.'
     : 'Use concise, polite Japanese suitable for professional documents.';
@@ -106,9 +107,9 @@ function buildRequestPayload(text: string, tone: TranslateTone) {
       }
     ],
     generationConfig: {
-      thinkingConfig: {
-        thinkingBudget: 0
-      }
+      thinkingConfig: modelId === 'gemini-3.5-flash-lite'
+        ? { thinkingLevel: 'minimal' }
+        : { thinkingBudget: 0 }
     },
     tools: [
       {

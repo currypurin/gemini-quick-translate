@@ -1,10 +1,11 @@
 {
   "name": "gemini-flashlight-translator",
   "version": "0.2.0",
-  "description": "Chrome extension that streams Gemini 2.5 Flashlight translations for selected English text.",
+  "description": "Chrome extension that streams Gemini Flash-Lite translations for selected English text.",
   "scripts": {
     "build": "tsc",
-    "dev": "tsc --watch"
+    "dev": "tsc --watch",
+    "test": "npm run build && node --experimental-default-type=module --test tests/*.test.mjs"
   },
   "devDependencies": {
     "@types/chrome": "^0.0.245",

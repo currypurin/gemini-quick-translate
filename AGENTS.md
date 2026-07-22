@@ -2,7 +2,7 @@
 
 ## プロジェクト概要
 - Chrome拡張「Gemini Flashlight Translator」の仕様策定と実装を進行中。
-- 英語テキスト選択時にポップアップを表示し、Gemini 2.5 Flashlight APIから日本語訳をストリーミング表示する。
+- 英語テキスト選択時にポップアップを表示し、Gemini Flash-Lite APIから日本語訳をストリーミング表示する。
 - 翻訳履歴は最新 20 件を既定として保存し、拡張アイコンのポップアップから表示件数を調整できるシンプルな閲覧機能に留める。
 
 ## ユーザー向け体験の要点
@@ -30,10 +30,10 @@ src/shared/          型定義とメッセージ
 ```
 
 ## Gemini API連携
-- モデル: `gemini-flash-lite-latest`
-- エンドポイント: `POST https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-lite-latest:streamGenerateContent`
+- モデル: `gemini-3.5-flash-lite`（既定）または `gemini-2.5-flash-lite`
+- エンドポイント: `POST https://generativelanguage.googleapis.com/v1beta/models/{modelId}:streamGenerateContent`
 - 認証: ユーザー入力の API キーを URL クエリ `?key=` に付与
-- 設定: `thinkingBudget=0`、`googleSearch` ツールを有効化
+- 設定: Gemini 3.5は `thinkingLevel=minimal`、Gemini 2.5は `thinkingBudget=0`。どちらも `googleSearch` ツールを有効化
 - レスポンス形式:
   - `Content-Type: text/event-stream` の SSE チャンク
   - または `Content-Type: application/json` の改行区切り JSON

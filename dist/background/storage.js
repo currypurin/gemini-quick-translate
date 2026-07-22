@@ -5,7 +5,8 @@ const EXTENSION_ENABLED_KEY = 'extensionEnabled';
 const TRANSLATION_HISTORY_KEY = 'translationHistory';
 const HISTORY_DISPLAY_COUNT_KEY = 'historyDisplayCount';
 const MODEL_ID_STORAGE_KEY = 'geminiModelId';
-export const DEFAULT_MODEL_ID = 'gemini-2.5-flash-lite';
+export const SUPPORTED_MODEL_IDS = ['gemini-3.5-flash-lite', 'gemini-2.5-flash-lite'];
+export const DEFAULT_MODEL_ID = 'gemini-3.5-flash-lite';
 const MAX_HISTORY_ITEMS = 15;
 const DEFAULT_DISPLAY_COUNT = 2;
 export async function getApiKey() {
@@ -74,11 +75,14 @@ export async function setHistoryDisplayCount(count) {
 export async function getModelId() {
     const result = await chrome.storage.local.get([MODEL_ID_STORAGE_KEY]);
     const value = result[MODEL_ID_STORAGE_KEY];
-    if (value === 'gemini-2.5-flash-lite' || value === 'gemini-3.1-flash-lite-preview') {
+    if (isGeminiModelId(value)) {
         return value;
     }
     return DEFAULT_MODEL_ID;
 }
 export async function setModelId(modelId) {
     await chrome.storage.local.set({ [MODEL_ID_STORAGE_KEY]: modelId });
+}
+export function isGeminiModelId(value) {
+    return typeof value === 'string' && SUPPORTED_MODEL_IDS.some((modelId) => modelId === value);
 }

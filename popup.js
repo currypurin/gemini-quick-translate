@@ -14,7 +14,8 @@ const WIDTH_STEP = 10;
 const EXTENSION_ENABLED_KEY = 'extensionEnabled';
 
 const MODEL_ID_STORAGE_KEY = 'geminiModelId';
-const DEFAULT_MODEL_ID = 'gemini-2.5-flash-lite';
+const DEFAULT_MODEL_ID = 'gemini-3.5-flash-lite';
+const SUPPORTED_MODEL_IDS = new Set(['gemini-3.5-flash-lite', 'gemini-2.5-flash-lite']);
 
 const TRANSLATION_HISTORY_KEY = 'translationHistory';
 const HISTORY_DISPLAY_COUNT_KEY = 'historyDisplayCount';
@@ -185,7 +186,7 @@ function setupModelSelect() {
       return;
     }
     const saved = items[MODEL_ID_STORAGE_KEY];
-    if (saved === 'gemini-2.5-flash-lite' || saved === 'gemini-3.1-flash-lite-preview') {
+    if (SUPPORTED_MODEL_IDS.has(saved)) {
       currentModelId = saved;
     }
     updateModelUI();
